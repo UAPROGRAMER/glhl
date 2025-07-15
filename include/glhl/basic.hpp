@@ -9,6 +9,8 @@ void quit();
 
 void poolEvents();
 
+void setVSync(bool value);
+
 }
 
 #endif

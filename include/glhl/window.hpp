@@ -15,6 +15,8 @@ public:
     Window(int width, int height, const char* title);
     ~Window();
 
+    // Utility
+
     GLFWwindow* getPtr() const;
 
     void getSize(int& width, int& height) const;
@@ -23,15 +25,21 @@ public:
 
     int getHeight() const;
 
-    void close() const;
+    bool isShouldClose() const; // temp
 
-    void forseClose();
+    // Window
+
+    void close();
 
     void use() const;
 
     void flip() const;
 
-    bool shouldClose() const;
+    void setVSync(bool value) const;
+
+    // Input
+
+    bool isKeyPressed(int key) const;
 };
 
 }

@@ -1,8 +1,6 @@
 #include <glhl/error_handling.hpp>
 #include "internal/error_handling.hpp"
 
-#include <iostream>
-
 namespace glhl {
 
 GLHLError::GLHLError(int code, std::string desc)

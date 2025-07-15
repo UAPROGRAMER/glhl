@@ -4,6 +4,7 @@
 #include <glhl/basic.hpp>
 #include <glhl/error_handling.hpp>
 #include "internal/error_handling.hpp"
+#include "internal/window.hpp"
 
 namespace glhl {
 
@@ -28,6 +29,10 @@ void quit() {
 
 void poolEvents() {
     glfwPollEvents();
+    for (auto pair : windowShouldCloseMap) {
+        auto key = pair.first;
+        windowShouldCloseMap[key] = glfwWindowShouldClose(key);
+    }
 }
 
 }

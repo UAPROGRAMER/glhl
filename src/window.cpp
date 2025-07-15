@@ -4,8 +4,7 @@
 #include <glhl/window.hpp>
 #include "internal/window.hpp"
 #include <glhl/error_handling.hpp>
-
-#include <iostream>
+#include <glhl/keys.hpp>
 
 namespace glhl {
 
@@ -14,9 +13,13 @@ Window::Window(int width, int height, const char* title) {
     if (window_ptr == nullptr)
         throw GLHLError(error::WINDOW_CREATION_FAIL, "Failed to create window.");
 
-    glfwSetFramebufferSizeCallback(window_ptr, glfwWindowSizeChangeCallback);
+    windowShouldCloseMap.insert({getPtr(), glfwWindowShouldClose(getPtr())});
+
+    glfwSetFramebufferSizeCallback(getPtr(), glfwWindowSizeChangeCallback);
 
     use();
+
+    glfwSwapInterval(1);
 
     // load gl
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -40,17 +43,17 @@ Window::~Window() {
         glfwDestroyWindow(window_ptr);
 }
 
+// Utility
+
 GLFWwindow* Window::getPtr() const {
     if (window_ptr == nullptr)
-        throw GLHLError(error::WINDOW_OPERATION_FAIL, "Failed to get ptr of the window.");
+        throw GLHLError(error::WINDOW_OPERATION_FAIL, "ERROR::glhl:Window::getPtr: window_ptr value is nullptr.");
     return window_ptr;
 }
 
 void Window::getSize(int& width, int& height) const {
-    if (window_ptr == nullptr)
-        throw GLHLError(error::WINDOW_OPERATION_FAIL, "Failed to get size of the window.");
     int temp_x, temp_y;
-    glfwGetWindowSize(window_ptr, &temp_x, &temp_y);
+    glfwGetWindowSize(getPtr(), &temp_x, &temp_y);
     width = temp_x;
     height = temp_y;
 }
@@ -67,45 +70,46 @@ int Window::getHeight() const {
     return height;
 }
 
-void Window::close() const {
-    if (window_ptr == nullptr)
-        throw GLHLError(error::WINDOW_OPERATION_FAIL, "Failed to close the window.");
-    glfwWindowShouldClose(window_ptr);
+//temp
+
+bool Window::isShouldClose() const {
+    return glfwWindowShouldClose(getPtr());
 }
 
-void Window::forseClose() {
-    if (window_ptr == nullptr)
-        throw GLHLError(error::WINDOW_OPERATION_FAIL, "Failed to forse close the window.");
-    glfwDestroyWindow(window_ptr);
+// Window
+
+void Window::close() {
+    glfwDestroyWindow(getPtr());
+    windowShouldCloseMap.erase(getPtr());
+    window_ptr = nullptr;
 }
 
 void Window::use() const {
-    if (window_ptr == nullptr)
-        throw GLHLError(error::WINDOW_OPERATION_FAIL, "Failed to use the window.");
-    glfwMakeContextCurrent(window_ptr);
+    if (glfwGetCurrentContext() != getPtr())
+        glfwMakeContextCurrent(getPtr());
 }
 
 void Window::flip() const {
-    if (window_ptr == nullptr)
-        throw GLHLError(error::WINDOW_OPERATION_FAIL, "Failed to flip the window.");
-    glfwSwapBuffers(window_ptr);
+    glfwSwapBuffers(getPtr());
 }
 
-bool Window::shouldClose() const {
-    if (window_ptr == nullptr)
-        return true;
-    return glfwWindowShouldClose(window_ptr) == 1;
+void Window::setVSync(bool value) const {
+    use();
+    glfwSwapInterval(value ? 1 : 0);
 }
+
+// Input
+
+bool Window::isKeyPressed(int key) const {
+    return glfwGetKey(getPtr(), key) == GLFW_PRESS;
+}
+
+// Other
 
 void glfwWindowSizeChangeCallback(GLFWwindow* window, int width, int height) {
-    GLFWwindow* context_window = glfwGetCurrentContext();
-    if (window == context_window) {
-        glViewport(0, 0, width, height);
-        return;
-    }
-    glfwMakeContextCurrent(window);
+    if (glfwGetCurrentContext() != window)
+        glfwMakeContextCurrent(window);
     glViewport(0, 0, width, height);
-    glfwMakeContextCurrent(context_window);
 }
 
 }

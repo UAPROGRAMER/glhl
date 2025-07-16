@@ -3,6 +3,10 @@
 
 #include <GLFW/glfw3.h>
 
+#include <glhl/event.hpp>
+
+#include <vector>
+
 namespace glhl {
 
 class Window {
@@ -25,21 +29,23 @@ public:
 
     int getHeight() const;
 
-    bool isShouldClose() const; // temp
-
     // Window
 
     void close();
 
     void use() const;
 
-    void flip() const;
-
     void setVSync(bool value) const;
 
     // Input
 
     bool isKeyPressed(int key) const;
+
+    const std::vector<Event>& getEvents() const;
+
+    // Graphycs
+
+    void flip() const;
 };
 
 }

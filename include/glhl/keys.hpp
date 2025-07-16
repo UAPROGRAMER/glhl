@@ -3,7 +3,7 @@
 
 namespace glhl {
 
-namespace key {
+namespace Keys {
 
 enum {
     KEY_SPACE = 32,

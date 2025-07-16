@@ -12,7 +12,7 @@ void init() {
     glfwSetErrorCallback(glfwErrorCallback);
 
     if (!glfwInit())
-        throw GLHLError(error::INIT_FAIL, "Failed to initialize GLFW.");
+        throw GLHLError(Errors::INIT_FAIL, "Failed to initialize GLFW.");
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -29,9 +29,16 @@ void quit() {
 
 void poolEvents() {
     glfwPollEvents();
-    for (auto pair : windowShouldCloseMap) {
-        auto key = pair.first;
-        windowShouldCloseMap[key] = glfwWindowShouldClose(key);
+    for (const auto& pair : windowEventsMap) {
+        const auto key = pair.first;
+        auto& events = windowEventsMap.at(key);
+        events.clear();
+        if (glfwWindowShouldClose(key))
+            events.push_back(Event(EventTypes::QUIT));
+
+        for (const auto& key_event : windowKeyEventsMap.at(key))
+            events.push_back(key_event);
+        windowKeyEventsMap.at(key).clear();
     }
 }
 

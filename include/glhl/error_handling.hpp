@@ -6,7 +6,8 @@
 
 namespace glhl {
 
-namespace error {
+namespace Errors {
+
 enum {
     UNKNOWN_ERROR = 0x01,
     INIT_FAIL,
@@ -14,12 +15,13 @@ enum {
     WINDOW_CREATION_FAIL,
     WINDOW_OPERATION_FAIL,
 };
+
 }
 
 class GLHLError : public std::exception {
 public:
-    int code;
-    std::string desc;
+    const int code;
+    const std::string desc;
 
     GLHLError(int code, std::string desc);
     GLHLError(int code, const char* desc);

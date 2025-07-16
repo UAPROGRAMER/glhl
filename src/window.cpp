@@ -6,16 +6,24 @@
 #include <glhl/error_handling.hpp>
 #include <glhl/keys.hpp>
 
+#include <iostream>
+
 namespace glhl {
+
+std::unordered_map<GLFWwindow*, std::vector<Event>> windowEventsMap;
+
+std::unordered_map<GLFWwindow*, std::vector<Event>> windowKeyEventsMap;
 
 Window::Window(int width, int height, const char* title) {
     window_ptr = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (window_ptr == nullptr)
-        throw GLHLError(error::WINDOW_CREATION_FAIL, "Failed to create window.");
+        throw GLHLError(Errors::WINDOW_CREATION_FAIL, "Failed to create window.");
 
-    windowShouldCloseMap.insert({getPtr(), glfwWindowShouldClose(getPtr())});
+    windowEventsMap.insert({getPtr(), {}});
+    windowKeyEventsMap.insert({getPtr(), {}});
 
     glfwSetFramebufferSizeCallback(getPtr(), glfwWindowSizeChangeCallback);
+    glfwSetKeyCallback(getPtr(), glfwWindowKeyCallback);
 
     use();
 
@@ -23,7 +31,7 @@ Window::Window(int width, int height, const char* title) {
 
     // load gl
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        throw GLHLError(error::GL_LOADER_FAIL, "Failed to load glad gl loader.");
+        throw GLHLError(Errors::GL_LOADER_FAIL, "Failed to load glad gl loader.");
 
     // enable transparency
     glEnable(GL_BLEND);
@@ -40,14 +48,14 @@ Window::Window(int width, int height, const char* title) {
 
 Window::~Window() {
     if (window_ptr != nullptr)
-        glfwDestroyWindow(window_ptr);
+        close();
 }
 
 // Utility
 
 GLFWwindow* Window::getPtr() const {
     if (window_ptr == nullptr)
-        throw GLHLError(error::WINDOW_OPERATION_FAIL, "ERROR::glhl:Window::getPtr: window_ptr value is nullptr.");
+        throw GLHLError(Errors::WINDOW_OPERATION_FAIL, "ERROR::glhl:Window::getPtr: window_ptr value is nullptr.");
     return window_ptr;
 }
 
@@ -70,27 +78,18 @@ int Window::getHeight() const {
     return height;
 }
 
-//temp
-
-bool Window::isShouldClose() const {
-    return glfwWindowShouldClose(getPtr());
-}
-
 // Window
 
 void Window::close() {
     glfwDestroyWindow(getPtr());
-    windowShouldCloseMap.erase(getPtr());
+    windowEventsMap.erase(getPtr());
+    windowKeyEventsMap.erase(getPtr());
     window_ptr = nullptr;
 }
 
 void Window::use() const {
     if (glfwGetCurrentContext() != getPtr())
         glfwMakeContextCurrent(getPtr());
-}
-
-void Window::flip() const {
-    glfwSwapBuffers(getPtr());
 }
 
 void Window::setVSync(bool value) const {
@@ -104,12 +103,32 @@ bool Window::isKeyPressed(int key) const {
     return glfwGetKey(getPtr(), key) == GLFW_PRESS;
 }
 
+const std::vector<Event>& Window::getEvents() const {
+    return windowEventsMap.at(getPtr());
+}
+
+// Graphycs
+
+void Window::flip() const {
+    glfwSwapBuffers(getPtr());
+}
+
 // Other
 
 void glfwWindowSizeChangeCallback(GLFWwindow* window, int width, int height) {
     if (glfwGetCurrentContext() != window)
         glfwMakeContextCurrent(window);
     glViewport(0, 0, width, height);
+}
+
+void glfwWindowKeyCallback(GLFWwindow* window, int key, int scan, int action, int mods) {
+    auto& events = windowKeyEventsMap.at(window);
+    if (action == GLFW_PRESS)
+        events.push_back(Event(EventTypes::KEY_PRESSED, key));
+    else if (action == GLFW_RELEASE)
+        events.push_back(Event(EventTypes::KEY_RELEASED, key));
+    else
+        events.push_back(Event(EventTypes::KEY_REPEAT, key));
 }
 
 }
